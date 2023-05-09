@@ -7,9 +7,9 @@ task:	codec.h basic_main.c
 stdinExample:	stdin_main.c
 		gcc stdin_main.c ./libCodec.so -o tester
 
-myMain:	my_main.c
-		gcc my_main.c ./libCodec.so -o myMain -pthread -g
+coder:	coder.c
+		gcc coder.c ./libCodec.so -o coder -pthread -g
 
 .PHONY: clean
 clean:
-	-rm encoder tester libCodec.so 2>/dev/null
+	-rm encoder tester libCodec.so coder 2>/dev/null

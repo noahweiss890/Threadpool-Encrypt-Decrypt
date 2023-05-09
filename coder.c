@@ -9,6 +9,7 @@
 int exit_flag_todo = 0;
 int exit_flag_done = 0;
 
+// struct that will hold the task
 struct task {
 	char data[STR_SIZE];
 	void (*func)(char* data, int key);
@@ -16,6 +17,7 @@ struct task {
 	int index;
 };
 
+// create a task
 struct task* create_task(char *data, void (*func)(char* data, int key), int key, int index) {
 	struct task *t = (struct task*)malloc(sizeof(struct task));
 	t->data[0] = '\0';
@@ -26,11 +28,13 @@ struct task* create_task(char *data, void (*func)(char* data, int key), int key,
 	return t;
 }
 
+// struct that will hold the task node of the queue
 struct task_node {
 	struct task *task;
 	struct task_node *next;
 };
 
+// create a task node
 struct task_node* create_task_node(struct task *t) {
 	struct task_node *tn = (struct task_node*)malloc(sizeof(struct task_node));
 	if(tn == NULL)
@@ -40,12 +44,14 @@ struct task_node* create_task_node(struct task *t) {
 	return tn;
 }
 
+// a queue of tasks
 struct task_queue {
 	struct task_node *head;
 	struct task_node *tail;
 	int size;
 };
 
+// print the queue of tasks by index
 void print_queue_index(struct task_queue *tq) {
 	if(tq == NULL)
 		printf("tq is null\n");
@@ -58,6 +64,7 @@ void print_queue_index(struct task_queue *tq) {
 	printf("\n");
 }
 
+// create a task queue
 struct task_queue* create_task_queue() {
 	struct task_queue *tq = (struct task_queue*)malloc(sizeof(struct task_queue));
 	tq->head = NULL;
@@ -66,6 +73,7 @@ struct task_queue* create_task_queue() {
 	return tq;
 }
 
+// enqueue a task
 void enqueue_task(struct task_queue *tq, struct task *t) {
 	struct task_node *tn = create_task_node(t);
 	if (tq->size == 0) {
@@ -78,6 +86,7 @@ void enqueue_task(struct task_queue *tq, struct task *t) {
 	tq->size++;
 }
 
+// dequeue a task
 struct task* dequeue_task(struct task_queue *tq) {
 	if (tq->size == 0) {
 		return NULL;
@@ -90,6 +99,7 @@ struct task* dequeue_task(struct task_queue *tq) {
 	return t;
 }
 
+// remove a task by index from the queue and return it
 struct task* remove_task(struct task_queue *tq, int index) {
 	if (tq->size == 0) {
 		return NULL;
@@ -118,6 +128,7 @@ struct task* remove_task(struct task_queue *tq, int index) {
 	return NULL;
 }
 
+// destroy a task queue
 void destroy_task_queue(struct task_queue *tq) {
 	while (tq->size > 0) {
 		struct task* t = dequeue_task(tq);
@@ -126,6 +137,7 @@ void destroy_task_queue(struct task_queue *tq) {
 	free(tq);
 }
 
+// struct that will hold the threadpool
 struct threadpool {
 	int task_count;
 	struct task_queue *todo;
@@ -136,6 +148,7 @@ struct threadpool {
 	pthread_cond_t done_cond;
 } *tp;
 
+// destroy the threadpool
 void destroy_threadpool() {
 	destroy_task_queue(tp->todo);
 	tp->todo = NULL;
@@ -149,11 +162,13 @@ void destroy_threadpool() {
 	tp = NULL;
 }
 
+// struct that represents a node in the linked list of thread ids
 struct tid_node {
 	pthread_t tid;
 	struct tid_node *next;
 };
 
+// function that will be run by the threads to execute the tasks
 void* run_task_thread(void *arg) {
 	struct task *t = (struct task*)arg;
 	t->func(t->data, t->key);
@@ -164,6 +179,7 @@ void* run_task_thread(void *arg) {
 	pthread_exit(NULL);
 }
 
+// function that will take from the todo queue and execute the tasks
 void* run_todo_thread(void *arg) {
 	struct tid_node *tid_head = NULL;
 	int exit_flag2 = 0;
@@ -198,6 +214,7 @@ void* run_todo_thread(void *arg) {
 	pthread_exit(NULL);
 }
 
+// add a task to the threadpool
 void add_task_to_threadpool(struct task *t) {
 	pthread_mutex_lock(&tp->todo_lock);
 	enqueue_task(tp->todo, t);
@@ -206,6 +223,7 @@ void add_task_to_threadpool(struct task *t) {
 	pthread_cond_signal(&tp->todo_cond);
 }
 
+// checks if the next index's task is done
 int is_next_index_done(int index) {
 	struct task_node *tn = tp->done->head;
 	while (tn != NULL) {
@@ -217,6 +235,7 @@ int is_next_index_done(int index) {
 	return 0;
 }
 
+// function that will take from the done queue and print the results
 void* run_done_thread(void *arg) {
 	int index = 0;
 	int exit_flag2 = 0;
@@ -242,6 +261,7 @@ void* run_done_thread(void *arg) {
 	pthread_exit(NULL);
 }
 
+// create the threadpool
 void create_threadpool(pthread_t *todo_tid, pthread_t *done_tid) {
 	tp = (struct threadpool*)malloc(sizeof(struct threadpool));
 	tp->task_count = 0;
@@ -258,17 +278,13 @@ void create_threadpool(pthread_t *todo_tid, pthread_t *done_tid) {
 
 int main(int argc, char *argv[])
 {
-	// printf("size of threadpool is %ld\n", sizeof(struct threadpool));
-	// printf("size of task is %ld\n", sizeof(struct task));
-	// printf("size of task_node is %ld\n", sizeof(struct task_node));
-	// printf("size of queue is %ld\n", sizeof(struct task_queue));
-
 	if (argc != 3) {
 	    printf("usage: key flag < file \n");
 	    printf("!! data more than 1024 char will be ignored !!\n");
 	    return 0;
 	}
 
+	// get key from command line arguments
 	int key = atoi(argv[1]);
 
 	int encrypt_flag;
